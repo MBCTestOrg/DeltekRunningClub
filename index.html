@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spin the Wheel — Costpoint Operations</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap');
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html, body { width:100%; min-height:100%; font-family:'Montserrat',sans-serif; overflow-x:hidden; }
+
+    /* ── background split ── */
+    body {
+      background: linear-gradient(135deg, #00021D 50%, #F5F7FF 50%);
+      display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh;
+    }
+
+    /* dot grid overlays */
+    body::before, body::after {
+      content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+    }
+    body::before {
+      background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 28px 28px;
+      clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);
+    }
+    body::after {
+      background-image: radial-gradient(rgba(23,66,245,0.06) 1px, transparent 1px);
+      background-size: 28px 28px;
+      clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%);
+    }
+
+    /* ── hero text ── */
+    .hero {
+      position:relative; z-index:1;
+      text-align:center; margin-bottom:48px;
+    }
+    .hero-eyebrow {
+      font-size:10px; font-weight:700; letter-spacing:4px; text-transform:uppercase;
+      color:rgba(201,209,217,0.5); margin-bottom:12px;
+    }
+    .hero-title {
+      font-size:clamp(36px,6vw,72px); font-weight:900; letter-spacing:-1px; line-height:1;
+      background: linear-gradient(135deg, #fff 40%, #1742F5 100%);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    .hero-sub {
+      margin-top:14px; font-size:clamp(13px,1.4vw,16px); font-weight:600;
+      color:rgba(255,255,255,0.4);
+    }
+
+    /* ── card row ── */
+    .cards {
+      position:relative; z-index:1;
+      display:flex; gap:32px; flex-wrap:wrap; justify-content:center;
+      padding:0 24px;
+    }
+
+    .card {
+      position:relative; width:320px;
+      border-radius:24px; padding:36px 32px 32px;
+      text-decoration:none; cursor:pointer;
+      display:flex; flex-direction:column; align-items:center; gap:24px;
+      transition:transform 0.25s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.25s;
+      overflow:hidden;
+    }
+    .card:hover { transform:translateY(-8px) scale(1.02); }
+
+    /* dark card */
+    .card-dark {
+      background:#03061f;
+      border:1px solid rgba(23,66,245,0.35);
+      box-shadow:0 8px 40px rgba(23,66,245,0.2), 0 2px 8px rgba(0,0,0,0.6);
+    }
+    .card-dark:hover {
+      box-shadow:0 20px 60px rgba(23,66,245,0.35), 0 4px 16px rgba(0,0,0,0.7);
+    }
+
+    /* light card */
+    .card-light {
+      background:#FFFFFF;
+      border:1px solid rgba(23,66,245,0.15);
+      box-shadow:0 8px 40px rgba(23,66,245,0.1), 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .card-light:hover {
+      box-shadow:0 20px 60px rgba(23,66,245,0.2), 0 4px 16px rgba(0,0,0,0.1);
+    }
+
+    /* mode badge */
+    .mode-badge {
+      font-size:9px; font-weight:700; letter-spacing:3px; text-transform:uppercase;
+      padding:5px 14px; border-radius:999px;
+    }
+    .card-dark  .mode-badge { background:rgba(23,66,245,0.2);  color:#7B9BFF; border:1px solid rgba(23,66,245,0.4); }
+    .card-light .mode-badge { background:rgba(23,66,245,0.08); color:#1742F5; border:1px solid rgba(23,66,245,0.25); }
+
+    /* wheel preview */
+    .wheel-preview {
+      width:160px; height:160px; border-radius:50%;
+      position:relative; overflow:hidden;
+      flex-shrink:0;
+    }
+    .card-dark  .wheel-preview { box-shadow:0 0 0 3px rgba(23,66,245,0.4), 0 0 40px rgba(23,66,245,0.25); }
+    .card-light .wheel-preview { box-shadow:0 0 0 3px rgba(23,66,245,0.2), 0 8px 30px rgba(23,66,245,0.12); }
+
+    canvas.prev { width:100%; height:100%; }
+
+    /* hub dot */
+    .prev-hub {
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      width:28px; height:28px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:12px; border:3px solid #1742F5; z-index:2;
+    }
+    .card-dark  .prev-hub { background:#00021D; }
+    .card-light .prev-hub { background:#fff; }
+
+    /* card label */
+    .card-label {
+      font-size:22px; font-weight:900; letter-spacing:-0.5px;
+    }
+    .card-dark  .card-label { color:#fff; }
+    .card-light .card-label { color:#00021D; }
+
+    .card-desc {
+      font-size:12px; font-weight:600; text-align:center; line-height:1.5;
+      margin-top:-12px;
+    }
+    .card-dark  .card-desc { color:rgba(201,209,217,0.45); }
+    .card-light .card-desc { color:rgba(60,69,78,0.5); }
+
+    /* CTA button */
+    .card-btn {
+      width:100%; padding:13px;
+      font-family:'Montserrat',sans-serif; font-size:12px; font-weight:800;
+      letter-spacing:2.5px; text-transform:uppercase;
+      border:none; border-radius:12px; cursor:pointer;
+      transition:background 0.2s, box-shadow 0.2s;
+    }
+    .card-dark  .card-btn { background:#1742F5; color:#fff; box-shadow:0 0 24px rgba(23,66,245,0.4); }
+    .card-dark  .card-btn:hover { background:#2d55ff; box-shadow:0 0 36px rgba(23,66,245,0.6); }
+    .card-light .card-btn { background:#1742F5; color:#fff; box-shadow:0 4px 20px rgba(23,66,245,0.35); }
+    .card-light .card-btn:hover { background:#2d55ff; box-shadow:0 4px 28px rgba(23,66,245,0.55); }
+
+    /* glow orb backgrounds */
+    .card::before {
+      content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
+      opacity:0; transition:opacity 0.3s;
+      border-radius:24px;
+    }
+    .card-dark::before  { background:radial-gradient(circle at 50% 30%, rgba(23,66,245,0.15), transparent 70%); }
+    .card-light::before { background:radial-gradient(circle at 50% 30%, rgba(23,66,245,0.07), transparent 70%); }
+    .card:hover::before { opacity:1; }
+
+    .card > * { position:relative; z-index:1; }
+
+    /* footer */
+    .footer {
+      position:relative; z-index:1;
+      margin-top:48px; font-size:10px; font-weight:700; letter-spacing:2px;
+      text-transform:uppercase; color:rgba(201,209,217,0.25);
+      text-align:center;
+    }
+
+    @media(max-width:700px){
+      body { background:#00021D; }
+      body::before { clip-path:none; }
+      body::after  { display:none; }
+      .hero-title { -webkit-text-fill-color:#fff; }
+      .card { width:min(300px,90vw); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="hero">
+    <div class="hero-eyebrow">Deltek Running Club</div>
+    <div class="hero-title">Spin the Wheel</div>
+    <div class="hero-sub">Choose your experience to pick today's winners</div>
+  </div>
+
+  <div class="cards">
+
+    <!-- DARK MODE CARD -->
+    <a class="card card-dark" href="spin-the-wheel.html">
+      <span class="mode-badge">🌙 Dark Mode</span>
+      <div class="wheel-preview">
+        <canvas class="prev" id="prevDark" width="160" height="160"></canvas>
+        <div class="prev-hub">🎲</div>
+      </div>
+      <div class="card-label">Dark Mode</div>
+      <div class="card-desc">Deep navy background with<br>vivid neon-blue accents</div>
+      <button class="card-btn">Launch Dark Mode</button>
+    </a>
+
+    <!-- LIGHT MODE CARD -->
+    <a class="card card-light" href="spin-wheel-light.html">
+      <span class="mode-badge">☀️ Light Mode</span>
+      <div class="wheel-preview">
+        <canvas class="prev" id="prevLight" width="160" height="160"></canvas>
+        <div class="prev-hub">🎲</div>
+      </div>
+      <div class="card-label">Light Mode</div>
+      <div class="card-desc">Clean white canvas with<br>crisp blue & orange accents</div>
+      <button class="card-btn">Launch Light Mode</button>
+    </a>
+
+  </div>
+
+  <div class="footer">Deltek Running Club &nbsp;·&nbsp; Awards Picker</div>
+
+  <script>
+    var COLORS = ['#1742F5','#FF8C00','#00B6C3','#A855F7','#F59E0B','#EC4899','#22C55E','#FF6B35'];
+    var LABELS = ['🏆 Delivery','🥇 Commit','🚀 PR','👀 Review'];
+
+    function drawPreview(canvasId, borderColor) {
+      var c = document.getElementById(canvasId);
+      var ctx = c.getContext('2d');
+      var size = 160, cx = 80, cy = 80, r = 76;
+      var n = LABELS.length, arc = (Math.PI * 2) / n;
+      var angle = -Math.PI / 4; // slight rotation for visual interest
+
+      for (var i = 0; i < n; i++) {
+        var start = angle + i * arc, end = start + arc;
+        ctx.beginPath(); ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r, start, end); ctx.closePath();
+        ctx.fillStyle = COLORS[i % COLORS.length]; ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1.5; ctx.stroke();
+
+        ctx.save(); ctx.translate(cx, cy); ctx.rotate(start + arc / 2);
+        ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+        ctx.font = 'bold 10px Montserrat,sans-serif';
+        ctx.fillStyle = '#fff'; ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 3;
+        ctx.fillText(LABELS[i], r - 10, 0);
+        ctx.restore();
+      }
+
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = borderColor; ctx.lineWidth = 3; ctx.stroke();
+    }
+
+    // Animate preview wheels slowly
+    var darkAngle = 0, lightAngle = Math.PI / 8;
+
+    function drawAnimatedPreview(canvasId, angle, borderColor, bgFill) {
+      var c = document.getElementById(canvasId);
+      var ctx = c.getContext('2d');
+      var size = 160, cx = 80, cy = 80, r = 76;
+      ctx.clearRect(0, 0, size, size);
+      var n = LABELS.length, arc = (Math.PI * 2) / n;
+
+      for (var i = 0; i < n; i++) {
+        var start = angle + i * arc, end = start + arc;
+        ctx.beginPath(); ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r, start, end); ctx.closePath();
+        ctx.fillStyle = COLORS[i % COLORS.length]; ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1.5; ctx.stroke();
+
+        ctx.save(); ctx.translate(cx, cy); ctx.rotate(start + arc / 2);
+        ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+        ctx.font = 'bold 9px Montserrat,sans-serif';
+        ctx.fillStyle = '#fff'; ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 3;
+        var label = LABELS[i]; if (ctx.measureText(label).width > 52) label = label.slice(0,6)+'…';
+        ctx.fillText(label, r - 8, 0);
+        ctx.restore();
+      }
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = borderColor; ctx.lineWidth = 3; ctx.stroke();
+    }
+
+    function animatePreviews() {
+      darkAngle  += 0.003;
+      lightAngle -= 0.002;
+      drawAnimatedPreview('prevDark',  darkAngle,  'rgba(23,66,245,0.7)');
+      drawAnimatedPreview('prevLight', lightAngle, 'rgba(23,66,245,0.5)');
+      requestAnimationFrame(animatePreviews);
+    }
+
+    animatePreviews();
+  </script>
+</body>
+</html>
