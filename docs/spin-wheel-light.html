@@ -122,8 +122,8 @@
       font-size:clamp(32px,5vw,64px); font-weight:900; color:#c96e00;
       line-height:1.1; word-break:break-word;
     }
+    .result-actions { display:flex; gap:12px; margin-top:8px; flex-wrap:wrap; justify-content:center; }
     .result-close {
-      margin-top:8px;
       font-family:'Montserrat',sans-serif; font-size:11px; font-weight:800;
       letter-spacing:2px; text-transform:uppercase;
       color:rgba(60,69,78,0.55); background:rgba(0,2,29,0.05);
@@ -132,6 +132,15 @@
       transition:background 0.2s, color 0.2s;
     }
     .result-close:hover { background:rgba(0,2,29,0.1); color:#00021D; }
+    .result-remove {
+      font-family:'Montserrat',sans-serif; font-size:11px; font-weight:800;
+      letter-spacing:2px; text-transform:uppercase;
+      color:#c96e00; background:rgba(201,110,0,0.07);
+      border:1px solid rgba(201,110,0,0.3); border-radius:999px;
+      padding:10px 28px; cursor:pointer;
+      transition:background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .result-remove:hover { background:rgba(201,110,0,0.15); border-color:rgba(201,110,0,0.6); color:#a05800; }
 
     /* award input */
     .award-label {
@@ -225,7 +234,10 @@
             <div class="result-award" id="resultAward"></div>
             <div class="result-winner-label" id="resultWinnerLabel">winner is</div>
             <div class="result-name" id="resultText"></div>
-            <button class="result-close" onclick="closeResult()">✕ Close</button>
+            <div class="result-actions">
+              <button class="result-remove" onclick="removeWinner()">✕ Remove Winner</button>
+              <button class="result-close" onclick="closeResult()">Keep &amp; Close</button>
+            </div>
           </div>
         </div>
       </div>
@@ -255,7 +267,7 @@
   <script>
     var COLORS = ['#1742F5','#FF8C00','#00B6C3','#A855F7','#F59E0B','#EC4899','#22C55E','#FF6B35','#6366F1','#14B8A6','#F97316','#8B5CF6'];
     var items = ['Sarah Johnson','Mike Chen','Emma Davis','James Wilson','Olivia Martinez','Liam Thompson','Ava Rodriguez','Noah Anderson'];
-    var currentAngle = 0, spinning = false, labelCache = [];
+    var currentAngle = 0, spinning = false, labelCache = [], lastWinnerIdx = -1;
     var canvas = document.getElementById('wheel'), ctx = canvas.getContext('2d');
 
     function buildLabelCache() {
@@ -330,6 +342,7 @@
       var n=items.length, arc=(Math.PI*2)/n;
       var norm=((Math.PI*1.5-currentAngle)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
       var idx=Math.floor(norm/arc)%n;
+      lastWinnerIdx=idx;
 
       var award=document.getElementById('awardInput').value.trim();
       var awardEl=document.getElementById('resultAward');
@@ -350,6 +363,15 @@
     }
 
     function closeResult() { document.getElementById('resultWrap').classList.remove('show'); }
+
+    function removeWinner() {
+      if(lastWinnerIdx>=0&&lastWinnerIdx<items.length){
+        items.splice(lastWinnerIdx,1);
+        lastWinnerIdx=-1;
+        renderList(); buildLabelCache(); drawWheel(false);
+      }
+      document.getElementById('resultWrap').classList.remove('show');
+    }
 
     function renderList() {
       document.getElementById('namesList').value=items.join('\n');
